@@ -1,5 +1,6 @@
-# AI Agent simulating DEV Open response
+# AI Agent simulating DEVOps response
 
-### Uses OPEN AI function tooling
-### Had data to get server logs, restart servers
-### Responds to queries.
+#### OpenAI function tooling
+#### Implements Prompt chaining
+#### Scans data to get server logs, restart servers
+#### Responds to queries.
