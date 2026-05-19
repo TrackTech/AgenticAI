@@ -10,6 +10,9 @@ from pydantic import BaseModel, Field, Field
 from config import llm
 from state import StackState
 from langchain_core.messages import SystemMessage, HumanMessage
+from logger import setup_logger
+
+logger = setup_logger("snackshop.orchestrator")
 
 ORCHESTRATOR_PROMPT = """\
 You are the Orchestrator for SnackStack, a voice-enabled food delivery assistant.
@@ -56,6 +59,8 @@ def orchestrator_node(state:StackState) -> Command[Literal["menu_agent_node", "o
         *history,
         HumanMessage(content=query),
     ])
+
+    logger.info(f"Orchestrator decision: {decision}")
 
     clean_state = {
         **state,

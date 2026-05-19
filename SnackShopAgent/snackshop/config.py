@@ -13,7 +13,7 @@ if not OPENAI_API_KEY:
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ---------- LangChain LLM ----------
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0.2)
 
 # ---------- Embeddings (for RAG) ----------
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")

@@ -1,11 +1,16 @@
 from langchain_core.messages import (
+    AIMessage,
     SystemMessage,
     HumanMessage,
 )
+from pydantic import BaseModel, Field
 
 from state import StackState
 from config import llm
 from tools.menu_tools import menu_tools_list
+from logger import setup_logger
+
+logger = setup_logger("snackshop.menu_agent")
 
 MENU_AGENT_PROMPT = """\
 You are the Menu Discovery Agent for SnackShop, a food delivery platform.
@@ -30,7 +35,11 @@ GUIDELINES:
 - Keep responses concise — this is a voice assistant.
 """
 
-menu_llm = llm.bind_tools(menu_tools_list)
+class CoTResponse(BaseModel):
+    reasoning: list[str] = Field(description="Step-by-step thought process to answer the query")
+    content: str = Field(description="The final response to the user")
+
+menu_llm = llm.bind_tools(menu_tools_list).with_structured_output(CoTResponse)
 
 def menu_agent_node(state: StackState) -> dict:
     """Call the LLM. On first invocation build the initial prompt
@@ -52,15 +61,22 @@ def menu_agent_node(state: StackState) -> dict:
         # Subsequent call — tool results already in menu_messages
         all_msgs = existing
 
-    response = menu_llm.invoke(all_msgs)
-    all_msgs = [*all_msgs, response]
+    response:CoTResponse = menu_llm.invoke(all_msgs)
 
-    has_tools = bool(getattr(response, "tool_calls", None))
+    response_message = AIMessage(
+        content=response.content, 
+        additional_kwargs={"chain_of_thought": response.reasoning}
+        )
+    logger.info(f"Menu agent response: {response}")
+    all_msgs = [*all_msgs, response_message]
+
+    has_tools = bool(getattr(response_message, "tool_calls", None))
+    logger.info(f"Menu agent has tools: {has_tools}")
 
     update: dict = {"menu_messages": all_msgs}
 
     if not has_tools:
-        update["menu_response"] = response.content
-        update["messages"] = [response]
+        update["menu_response"] = response_message.content
+        update["messages"] = [response_message]
 
     return update
